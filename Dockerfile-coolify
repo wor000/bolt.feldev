@@ -1,5 +1,5 @@
 # Usando versão estável e compatível com Remix/Vite
-FROM node:18.17.1
+FROM node:20.18.0
 
 # Define diretório da aplicação
 WORKDIR /app
