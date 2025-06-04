@@ -10,7 +10,7 @@ RUN corepack enable pnpm && \
 COPY package.json pnpm-lock.yaml ./
 
 # Instalar dependências
-RUN pnpm install
+RUN pnpm install --no-verify-store-integrity
 
 # Copiar código  fonte e scripts
 COPY . .
