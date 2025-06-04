@@ -1,5 +1,5 @@
 # Usando uma versão LTS mais estável para evitar problemas de corepack/pnpm
-FROM node:18.19.1
+FROM node:18.17.1
 
 # Diretório de trabalho
 WORKDIR /app
@@ -25,7 +25,7 @@ RUN tr -d '\r' < bindings.sh > bindings.tmp && \
     chmod +x bindings.sh
 
 # Build da aplicação
-RUN pnpm run build
+RUN pnpm run build --filter !docs --filter !dev
 
 # Expor a porta usada pela aplicação
 EXPOSE 5173
