@@ -1,28 +1,33 @@
 FROM node:20.18.0
 
+# Definir diretório da aplicação
 WORKDIR /app
 
-# Habilita pnpm e instala wrangler
-RUN corepack enable pnpm && npm install -g wrangler
+# Instalar pnpm e wrangler (sem usar corepack!)
+RUN npm install -g pnpm@9.1.1 wrangler
 
-# Copia dependências e instala
+# Copiar arquivos de dependência
 COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --no-verify-store-integrity
 
-# Copia código e scripts
+# Desabilitar verificação de integridade (resolve bug da keyid)
+ENV PNPM_CONFIG_VERIFY_STORE_INTEGRITY=false
+
+# Instalar dependências
+RUN pnpm install
+
+# Copiar o restante da aplicação
 COPY . .
 
-# Garante permissões e formato correto do bindings.sh
-RUN tr -d '\r' < bindings.sh > bindings.tmp && \
-    mv bindings.tmp bindings.sh && \
-    chmod +x bindings.sh
-
-# Build do app
-RUN pnpm run build
-
+# Expor a porta padrão do Vite/Remix
 EXPOSE 5173
 
-ENV NODE_ENV=production \
+# Variáveis de ambiente de produção
+ENV WRANGLER_SEND_METRICS=false \
+    NODE_ENV=production \
     RUNNING_IN_DOCKER=true
 
+# Build da aplicação
+RUN pnpm run build
+
+# Comando padrão
 CMD ["pnpm", "run", "dockerstart"]
