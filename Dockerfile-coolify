@@ -1,40 +1,28 @@
-# Usando versão estável e compatível com Remix/Vite
 FROM node:20.18.0
 
-# Define diretório da aplicação
 WORKDIR /app
 
-# Ativa o corepack (necessário para usar pnpm corretamente)
-# Instala wrangler globalmente
-RUN corepack enable pnpm && \
-    npm install -g wrangler
+# Habilita pnpm e instala wrangler
+RUN corepack enable pnpm && npm install -g wrangler
 
-# Copia apenas arquivos de dependência primeiro (melhora cache)
+# Copia dependências e instala
 COPY package.json pnpm-lock.yaml ./
-
-# ⬇️ Solução crítica: aumenta o limite de memória do Node para build
-ENV NODE_OPTIONS=--max-old-space-size=3072
-
-# Instala as dependências sem checar integridade (evita erro de key)
 RUN pnpm install --no-verify-store-integrity
 
-# Copia todo o restante do código
+# Copia código e scripts
 COPY . .
 
-# Corrige permissões e quebra de linha do script de bindings
+# Garante permissões e formato correto do bindings.sh
 RUN tr -d '\r' < bindings.sh > bindings.tmp && \
     mv bindings.tmp bindings.sh && \
     chmod +x bindings.sh
 
-# Executa build de produção (com mais memória disponível)
+# Build do app
 RUN pnpm run build
 
-# Exponha a porta da aplicação (ajuste conforme necessário)
 EXPOSE 5173
 
-# Variáveis padrão
 ENV NODE_ENV=production \
     RUNNING_IN_DOCKER=true
 
-# Comando final: iniciar o app
 CMD ["pnpm", "run", "dockerstart"]
