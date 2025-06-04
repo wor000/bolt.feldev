@@ -1,38 +1,40 @@
-# Usando uma versão LTS mais estável para evitar problemas de corepack/pnpm
+# Usando versão estável e compatível com Remix/Vite
 FROM node:18.17.1
 
-# Diretório de trabalho
+# Define diretório da aplicação
 WORKDIR /app
 
-# Ativar o corepack (necessário para usar pnpm corretamente)
-RUN corepack enable pnpm
+# Ativa o corepack (necessário para usar pnpm corretamente)
+# Instala wrangler globalmente
+RUN corepack enable pnpm && \
+    npm install -g wrangler
 
-# Instalar wrangler globalmente (após corepack estar habilitado)
-RUN npm install -g wrangler
-
-# Copiar arquivos de dependência
+# Copia apenas arquivos de dependência primeiro (melhora cache)
 COPY package.json pnpm-lock.yaml ./
 
-# Instalar dependências sem verificação de integridade
+# ⬇️ Solução crítica: aumenta o limite de memória do Node para build
+ENV NODE_OPTIONS=--max-old-space-size=3072
+
+# Instala as dependências sem checar integridade (evita erro de key)
 RUN pnpm install --no-verify-store-integrity
 
-# Copiar o restante do código-fonte
+# Copia todo o restante do código
 COPY . .
 
-# Garantir permissões e formato correto para o script bindings.sh
+# Corrige permissões e quebra de linha do script de bindings
 RUN tr -d '\r' < bindings.sh > bindings.tmp && \
     mv bindings.tmp bindings.sh && \
     chmod +x bindings.sh
 
-# Build da aplicação
-RUN pnpm build
+# Executa build de produção (com mais memória disponível)
+RUN pnpm run build
 
-# Expor a porta usada pela aplicação
+# Exponha a porta da aplicação (ajuste conforme necessário)
 EXPOSE 5173
 
-# Variáveis de ambiente
+# Variáveis padrão
 ENV NODE_ENV=production \
     RUNNING_IN_DOCKER=true
 
-# Comando padrão para subir o app
+# Comando final: iniciar o app
 CMD ["pnpm", "run", "dockerstart"]
